@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shishima Game</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            width: 300px;
+            height: 300px;
+        }
+        .cell {
+            border: 1px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="board">
+        <div class="cell" id="cell-0"></div>
+        <div class="cell" id="cell-1"></div>
+        <div class="cell" id="cell-2"></div>
+        <div class="cell" id="cell-3"></div>
+        <div class="cell" id="cell-4"></div>
+        <div class="cell" id="cell-5"></div>
+        <div class="cell" id="cell-6"></div>
+        <div class="cell" id="cell-7"></div>
+        <div class="cell" id="cell-8"></div>
+    </div>
+    <button id="start">Start Game</button>
+    <button id="move">Move Pawn</button>
+    <button id="check">Check Win</button>
+    <button id="save">Save Game</button>
+    <button id="load">Load Game</button>
+
+    <script>
+        var currentPlayer = 'X';
+        var placedPawns = {'X': [], 'O': []};
+
+        function isAdjacent(pos1, pos2) {
+            var row1 = Math.floor(pos1 / 3);
+            var col1 = pos1 % 3;
+            var row2 = Math.floor(pos2 / 3);
+            var col2 = pos2 % 3;
+            return Math.abs(row1 - row2) <= 1 && Math.abs(col1 - col2) <= 1;
+        }
+
+        $(document).ready(function(){
+            $("#start").click(function(){
+                $(".cell").click(function(){
+                    var pos = parseInt(this.id.split('-')[1]);
+                    if(pos !== 4 && placedPawns[currentPlayer].length < 3 && $(this).text() === '') {
+                        if(placedPawns[currentPlayer].length > 0 && !placedPawns[currentPlayer].some(function(existing) { return isAdjacent(pos, existing); })) {
+                            alert("Invalid position, pawns must be adjacent to at least one other. Try again.");
+                        } else {
+                            $(this).text(currentPlayer);
+                            placedPawns[currentPlayer].push(pos);
+                            if(placedPawns['X'].length === 3 && placedPawns['O'].length < 3) {
+                                currentPlayer = 'O';
+                            }
+                        }
+                    } else {
+                        alert("Invalid position, please try again.");
+                    }
+                });
+            });
+
+            $("#move").click(function(){
+                var player = 'X';
+                var start = 0;
+                var end = 1;
+                $.post("http://localhost:5000/move", {player: player, start: start, end: end}, function(data, status){
+                    var board = data.board;
+                    for(var i = 0; i < 9; i++) {
+                        if(board[i] !== ' ') {
+                            $("#cell-" + i).text(board[i]);
+                        }
+                    }
+                });
+            });
+
+            $("#move").click(function(){
+                $.post("http://localhost:5000/move", {player: 'X', start: 0, end: 1}, function(data, status){
+                    alert("Data: " + data + "\nStatus: " + status);
+                });
+            });
+
+            $("#check").click(function(){
+                $.get("http://localhost:5000/check?player=X", function(data, status){
+                    alert("Data: " + data + "\nStatus: " + status);
+                });
+            });
+
+            $("#save").click(function(){
+                $.post("http://localhost:5000/save", function(data, status){
+                    alert("Data: " + data + "\nStatus: " + status);
+                });
+            });
+
+            $("#load").click(function(){
+                $.post("http://localhost:5000/load", {filename: 'shishima_game_save.json'}, function(data, status){
+                    alert("Data: " + data + "\nStatus: " + status);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
